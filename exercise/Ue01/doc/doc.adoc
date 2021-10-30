@@ -1,0 +1,48 @@
+= Übung 1
+:author: Andreas Wenzelhuemer
+:email: <S1910307106@fhooe.at>
+:reproducible:
+:experimental:
+:listing-caption: Listing
+:source-highlighter: rouge
+:img: ./img
+:toc:
+:numbered:
+:toclevels: 5
+:rouge-style: github
+
+<<<
+== Theory
+
+=== Calculate and plot speedup and efficiency
+
+Speedup = 1 / (σ + (1 - σ) / Cores) +
+Efficiency = Speedup / Cores +
+
+Seq: 0.2 +
+Par: 0.8 +
+Cores: n
+
+image::{img}/1_1.png[]
+
+The limit for speed up is 5.
+
+=== Calculate and plot σ with increasing problem sizes
+
+image::{img}/1_2.png[]
+
+With a problem size of 10000 the sequential part gets extremely small.
+
+=== How many processors can be utilized?
+
+p = 100: 11 cores are needed +
+p = 1000: 100 cores are necessary +
+p = 10000: With 1000 cores an efficiency of 80% can be reached +
+
+image::{img}/1_3.png[]
+
+== Wator
+
+=== Review of the application
+
+=== Three improvements
