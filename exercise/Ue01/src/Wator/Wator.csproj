@@ -149,6 +149,11 @@
     <Compile Include="Improved1\Fish.cs" />
     <Compile Include="Improved1\Improved1WatorWorld.cs" />
     <Compile Include="Improved1\Shark.cs" />
+    <Compile Include="Improved3\Animal.cs" />
+    <Compile Include="Improved3\AnimalType.cs" />
+    <Compile Include="Improved3\Fish.cs" />
+    <Compile Include="Improved3\Improved3WatorWorld.cs" />
+    <Compile Include="Improved3\Shark.cs" />
     <Compile Include="IWatorWorld.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -156,6 +161,10 @@
     <Compile Include="MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Improved2\Animal.cs" />
+    <Compile Include="Improved2\Fish.cs" />
+    <Compile Include="Improved2\Improved2WatorWorld.cs" />
+    <Compile Include="Improved2\Shark.cs" />
     <Compile Include="Original\Animal.cs" />
     <Compile Include="Original\Fish.cs" />
     <Compile Include="Original\OriginalWatorWorld.cs" />

@@ -1,12 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Drawing;
-using VPS.Wator.Original;
 
-namespace VPS.Wator.Improved1
+namespace VPS.Wator.Improved3
 {
     // initial object-oriented implementation of the Wator world simulation
-    public class Improved1WatorWorld : IWatorWorld
+    public class Improved3WatorWorld : IWatorWorld
     {
         private Random random;
 
@@ -18,9 +16,6 @@ namespace VPS.Wator.Improved1
 
         // for visualization
         private byte[] rgbValues;
-
-        // neighbour points
-        private readonly IList<Point> points = new List<Point>();
 
         #region Properties
         public int Width { get; private set; }  // width (number of cells) of the world
@@ -37,10 +32,20 @@ namespace VPS.Wator.Improved1
         public int SharkBreedEnergy { get; private set; }
         #endregion
 
-        public Improved1WatorWorld(Settings settings)
+
+        private Point[] neighborsWithOffset;
+
+
+        public Improved3WatorWorld(Settings settings)
         {
             Width = settings.Width;
             Height = settings.Height;
+            neighborsWithOffset = new Point[] {
+                new Point { X = 0, Y = Height - 1}, // Look north
+                new Point { X = 1, Y = 0 }, // Look east
+                new Point { X = 0, Y = 1}, // Look south
+                new Point { X = Width - 1, Y = 0} // Look west
+            };
             InitialFishPopulation = settings.InitialFishPopulation;
             InitialFishEnergy = settings.InitialFishEnergy;
             FishBreedTime = settings.FishBreedTime;
@@ -160,80 +165,39 @@ namespace VPS.Wator.Improved1
         }
 
         // find all neighboring cells of the given position and type
-        public IList<Point> GetNeighbours(Type type, Point position)
+        public Point[] GetNeighbors(Point position, bool findNeighborFishes)
         {
-            points.Clear();
-            int i, j;
+            Point[] neighbors = new Point[4];
+            int neighborIndex = 0;
 
-            // look north
-            i = position.X;
-            j = (position.Y + Height - 1) % Height;
-            if (type == null && Grid[i, j] == null)
+            foreach (var neighborPos in this.neighborsWithOffset)
             {
-                points.Add(new Point(i, j));
-            }
-            else if (type != null && type.IsInstanceOfType(Grid[i, j]))
-            {
-                if (Grid[i, j] != null && !Grid[i, j].Moved)
-                {  // ignore animals moved in the current iteration
-                    points.Add(new Point(i, j));
-                }
-            }
-            // look east
-            i = (position.X + 1) % Width;
-            j = position.Y;
-            if (type == null && Grid[i, j] == null)
-            {
-                points.Add(new Point(i, j));
-            }
-            else if (type != null && type.IsInstanceOfType(Grid[i, j]))
-            {
-                if (Grid[i, j] != null && !Grid[i, j].Moved)
+                var newPos = new Point((position.X + neighborPos.X) % Width, (position.Y + neighborPos.Y) % Height);
+                var animal = Grid[newPos.X, newPos.Y];
+                if ((findNeighborFishes && animal != null && !animal.Moved && animal.IsFish) // Find neighbor fish which was not moved
+                    || (!findNeighborFishes && animal == null)) // Find empty neighbor
                 {
-                    points.Add(new Point(i, j));
-                }
-            }
-            // look south
-            i = position.X;
-            j = (position.Y + 1) % Height;
-            if (type == null && Grid[i, j] == null)
-            {
-                points.Add(new Point(i, j));
-            }
-            else if (type != null && type.IsInstanceOfType(Grid[i, j]))
-            {
-                if (Grid[i, j] != null && !Grid[i, j].Moved)
-                {
-                    points.Add(new Point(i, j));
-                }
-            }
-            // look west
-            i = (position.X + Width - 1) % Width;
-            j = position.Y;
-            if (type == null && Grid[i, j] == null)
-            {
-                points.Add(new Point(i, j));
-            }
-            else if (type != null && type.IsInstanceOfType(Grid[i, j]))
-            {
-                if (Grid[i, j] != null && !Grid[i, j].Moved)
-                {
-                    points.Add(new Point(i, j));
+                    // ignore animals moved in the current iteration
+                    neighbors[neighborIndex] = newPos;
+                    neighborIndex++;
                 }
             }
 
-            return points;
+            // create result array that only contains found cells
+            Point[] result = new Point[neighborIndex];
+            Array.Copy(neighbors, result, neighborIndex);
+            return result;
         }
 
         // select a random neighboring cell of the given position and type
-        public Point SelectNeighbor(Type type, Point position)
+        public Point SelectNeighbor(Point position, bool findNeighborFishes = false)
         {
-            var neighbors = GetNeighbours(type, position);  // find all neighbors of required type
-            if (neighbors.Count > 1)
+            Point[] neighbors = GetNeighbors(position, findNeighborFishes);  // find all neighbors of required type
+            if (neighbors.Length > 1)
             {
-                return neighbors[random.Next(neighbors.Count)];  // return random neighbor (prevent bias)
+                return neighbors[random.Next(neighbors.Length)];  // return random neighbor (prevent bias)
             }
-            else if (neighbors.Count == 1)
+            else if (neighbors.Length == 1)
             {  // only one neighbor -> return without calling random
                 return neighbors[0];
             }

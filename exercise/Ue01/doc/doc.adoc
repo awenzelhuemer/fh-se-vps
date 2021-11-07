@@ -12,6 +12,16 @@
 :rouge-style: github
 
 <<<
+
+== Setup
+
+----
+Number of cores: 4
+Memory size 16,0 GB
+CPU type: Intel Core i7-8565U 1.80GHz
+System: Windows 11
+----
+
 == Theory
 
 === Calculate and plot speedup and efficiency
@@ -45,4 +55,135 @@ image::{img}/1_3.png[]
 
 === Review of the application
 
+==== Design
+The methods are too long and could often be simplified. Also some methods could be created in separate classes instead they are all in OriginalWatorWorld.
+
+==== Efficiency
+The program in case of efficiency has definitely potential for improvement. For example the use of two dimensional arrays or the creation of an position array each time the GetNeighbors function is called is not ideal. 
+
+==== Clarity
+With the GetNeighbors function, the if else constructs are not very ideal to read and could be improved or separate methods could be created.
+
+==== Readability
+
+Readability is definitely not the best. For example the GetNeighbours function is too long with lots of with lots of code duplications.
+
 === Three improvements
+
+==== Improvement 1
+
+Changed point array of GetNeighbours to List.
+Also introduced it globally to reduce the work of the garbage collector.
+Otherwise each time a new array has to be created.
+The list gets reused every time.
+
+image::{img}/2_1_Original.png[]
+
+image::{img}/2_1_Improved.png[]
+
+[source, csharp]
+----
+public IList<Point> GetNeighbours(Type type, Point position)
+{
+    points.Clear();
+    int i, j;
+
+    // look north
+    i = position.X;
+    j = (position.Y + Height - 1) % Height;
+    if (type == null && Grid[i, j] == null)
+    {
+        points.Add(new Point(i, j));
+    }
+    else if (type != null && type.IsInstanceOfType(Grid[i, j]))
+    {
+        if (Grid[i, j] != null && !Grid[i, j].Moved)
+        {  // ignore animals moved in the current iteration
+            points.Add(new Point(i, j));
+        }
+    }
+    // ...
+} 
+----
+
+==== Improvement 2
+
+Changed all two dimensional matrices do one dimensional.
+That means that the animal board and the the matrix for the random positioning are only simple arrays where the index get calculated with a special function.
+Improvements can be seen especially on the ExecuteStep and RandomizeMatrix functions.
+
+image::{img}/2_2_Original.png[]
+
+image::{img}/2_2_Improved.png[]
+
+[source, csharp]
+----
+private int[] randomMatrix;
+
+public int GetGridIndex(int row, int column)
+{
+    return row * Width + column;
+}
+
+public Improved2WatorWorld(Settings settings)
+{
+    // ...
+    for (int col = 0; col < Width; col++)
+    {
+        for (int row = 0; row < Height; row++)
+        {
+            int value = randomMatrix[GetGridIndex(row, col)];
+            if (value < InitialFishPopulation)
+            {
+                Grid[GetGridIndex(row, col)] = new Fish(this, new Point(col, row), random.Next(0, FishBreedTime));
+            }
+            else if (value < InitialFishPopulation + InitialSharkPopulation)
+            {
+                Grid[GetGridIndex(row, col)] = new Shark(this, new Point(col, row), random.Next(0, SharkBreedEnergy));
+            }
+            else
+            {
+                Grid[GetGridIndex(row, col)] = null;
+            }
+        }
+    }
+}
+----
+
+==== Improvement 3
+
+Changed instance of to check if current neighbor is fish by creating an additional property IsFish for the shark class. That means no instance of is necessary.
+Additionally the Neighbor positions are stored globally with offsets instead of absolute positions and the conditions got simplified.
+
+image::{img}/2_3_Original.png[]
+
+
+image::{img}/2_3_Improved.png[]
+
+[source, csharp]
+----
+// find all neighboring cells of the given position and type
+public Point[] GetNeighbors(Point position, bool findNeighborFishes)
+{
+    Point[] neighbors = new Point[4];
+    int neighborIndex = 0;
+
+    foreach (var neighborPos in this.neighborsWithOffset)
+    {
+        var newPos = new Point((position.X + neighborPos.X) % Width, (position.Y + neighborPos.Y) % Height);
+        var animal = Grid[newPos.X, newPos.Y];
+        if ((findNeighborFishes && animal != null && !animal.Moved && animal.IsFish) // Find neighbor fish which was not moved
+            || (!findNeighborFishes && animal == null)) // Find empty neighbor
+        {
+            // ignore animals moved in the current iteration
+            neighbors[neighborIndex] = newPos;
+            neighborIndex++;
+        }
+    }
+
+    // create result array that only contains found cells
+    Point[] result = new Point[neighborIndex];
+    Array.Copy(neighbors, result, neighborIndex);
+    return result;
+}
+----
