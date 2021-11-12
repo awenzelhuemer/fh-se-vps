@@ -26,7 +26,7 @@ System: Windows 11
 
 === Calculate and plot speedup and efficiency
 
-Speedup = 1 / (σ + (1 - σ) / Cores) +
+Speedup = 1 / (σ + (1 - Sigma) / Cores) +
 Efficiency = Speedup / Cores +
 
 Seq: 0.2 +
@@ -37,7 +37,7 @@ image::{img}/1_1.png[]
 
 The limit for speed up is 5.
 
-=== Calculate and plot σ with increasing problem sizes
+=== Calculate and plot Sigma with increasing problem sizes
 
 image::{img}/1_2.png[]
 
@@ -46,7 +46,7 @@ With a problem size of 10000 the sequential part gets extremely small.
 === How many processors can be utilized?
 
 p = 100: 11 cores are needed +
-p = 1000: 100 cores are necessary +
+p = 1000: 100 cores are needed +
 p = 10000: With 1000 cores an efficiency of 80% can be reached +
 
 image::{img}/1_3.png[]
