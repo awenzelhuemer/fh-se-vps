@@ -6,8 +6,6 @@ namespace VPS.Wator.Improved3
 {
     public class Fish : Animal
     {
-        public override bool IsFish => true;
-
         public override Color Color
         {
             get { return Color.White; }
@@ -30,7 +28,7 @@ namespace VPS.Wator.Improved3
 
             Age++;
 
-            Point free = World.SelectNeighbor(Position);  // find a random empty neighboring cell
+            Point free = World.SelectNeighbor(null, Position);  // find a random empty neighboring cell
             if (free.X != -1) Move(free);  // empty cell found -> move there
 
             if (Age >= World.FishBreedTime) Spawn();  // fish reached breeding age -> spawn
@@ -39,11 +37,11 @@ namespace VPS.Wator.Improved3
         // spawning behaviour of fish
         protected override void Spawn()
         {
-            Point free = World.SelectNeighbor(Position);  // find a random empty neighboring cell
+            Point free = World.SelectNeighbor(null, Position);  // find a random empty neighboring cell
             if (free.X != -1)
             {
                 // empty neighboring cell found -> create new fish there
-                Fish fish = new Fish(World, free, 0);
+                new Fish(World, free, 0);
                 // reduce the age of the parent fish to make sure it is allowed to 
                 // reproduce only every FishBreedTime steps
                 Age -= World.FishBreedTime;

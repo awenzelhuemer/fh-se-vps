@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace VPS.Wator.Improved2
@@ -16,6 +17,9 @@ namespace VPS.Wator.Improved2
 
         // for visualization
         private byte[] rgbValues;
+
+        // neighbour points
+        private readonly IList<Point> points = new List<Point>();
 
         #region Properties
         public int Width { get; private set; }  // width (number of cells) of the world
@@ -159,10 +163,9 @@ namespace VPS.Wator.Improved2
         }
 
         // find all neighboring cells of the given position and type
-        public Point[] GetNeighbors(Type type, Point position)
+        public IList<Point> GetNeighbors(Type type, Point position)
         {
-            Point[] neighbors = new Point[4];
-            int neighborIndex = 0;
+            points.Clear();
             int i, j;
 
             // look north
@@ -170,15 +173,13 @@ namespace VPS.Wator.Improved2
             j = (position.Y + Height - 1) % Height;
             if (type == null && Grid[GetGridIndex(j, i)] == null)
             {
-                neighbors[neighborIndex] = new Point(i, j);
-                neighborIndex++;
+                points.Add(new Point(i, j));
             }
             else if (type != null && type.IsInstanceOfType(Grid[GetGridIndex(j, i)]))
             {
                 if (Grid[GetGridIndex(j, i)] != null && !Grid[GetGridIndex(j, i)].Moved)
                 {  // ignore animals moved in the current iteration
-                    neighbors[neighborIndex] = new Point(i, j);
-                    neighborIndex++;
+                    points.Add(new Point(i, j));
                 }
             }
             // look east
@@ -186,15 +187,13 @@ namespace VPS.Wator.Improved2
             j = position.Y;
             if (type == null && Grid[GetGridIndex(j, i)] == null)
             {
-                neighbors[neighborIndex] = new Point(i, j);
-                neighborIndex++;
+                points.Add(new Point(i, j));
             }
             else if (type != null && type.IsInstanceOfType(Grid[GetGridIndex(j, i)]))
             {
                 if (Grid[GetGridIndex(j, i)] != null && !Grid[GetGridIndex(j, i)].Moved)
                 {
-                    neighbors[neighborIndex] = new Point(i, j);
-                    neighborIndex++;
+                    points.Add(new Point(i, j));
                 }
             }
             // look south
@@ -202,15 +201,13 @@ namespace VPS.Wator.Improved2
             j = (position.Y + 1) % Height;
             if (type == null && Grid[GetGridIndex(j, i)] == null)
             {
-                neighbors[neighborIndex] = new Point(i, j);
-                neighborIndex++;
+                points.Add(new Point(i, j));
             }
             else if (type != null && type.IsInstanceOfType(Grid[GetGridIndex(j, i)]))
             {
                 if (Grid[GetGridIndex(j, i)] != null && !Grid[GetGridIndex(j, i)].Moved)
                 {
-                    neighbors[neighborIndex] = new Point(i, j);
-                    neighborIndex++;
+                    points.Add(new Point(i, j));
                 }
             }
             // look west
@@ -218,33 +215,28 @@ namespace VPS.Wator.Improved2
             j = position.Y;
             if (type == null && Grid[GetGridIndex(j, i)] == null)
             {
-                neighbors[neighborIndex] = new Point(i, j);
-                neighborIndex++;
+                points.Add(new Point(i, j));
             }
             else if (type != null && type.IsInstanceOfType(Grid[GetGridIndex(j, i)]))
             {
                 if (Grid[GetGridIndex(j, i)] != null && !Grid[GetGridIndex(j, i)].Moved)
                 {
-                    neighbors[neighborIndex] = new Point(i, j);
-                    neighborIndex++;
+                    points.Add(new Point(i, j));
                 }
             }
 
-            // create result array that only contains found cells
-            Point[] result = new Point[neighborIndex];
-            Array.Copy(neighbors, result, neighborIndex);
-            return result;
+            return points;
         }
 
         // select a random neighboring cell of the given position and type
         public Point SelectNeighbor(Type type, Point position)
         {
-            Point[] neighbors = GetNeighbors(type, position);  // find all neighbors of required type
-            if (neighbors.Length > 1)
+            IList<Point> neighbors = GetNeighbors(type, position);  // find all neighbors of required type
+            if (neighbors.Count > 1)
             {
-                return neighbors[random.Next(neighbors.Length)];  // return random neighbor (prevent bias)
+                return neighbors[random.Next(neighbors.Count)];  // return random neighbor (prevent bias)
             }
-            else if (neighbors.Length == 1)
+            else if (neighbors.Count == 1)
             {  // only one neighbor -> return without calling random
                 return neighbors[0];
             }

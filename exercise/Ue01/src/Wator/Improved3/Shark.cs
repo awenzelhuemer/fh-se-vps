@@ -10,8 +10,6 @@ namespace VPS.Wator.Improved3
             get { return Color.Red; }
         }
 
-        public override bool IsFish => false;
-
         // create and initialize a shark on the specified position in the given world
         public Shark(Improved3WatorWorld world, Point position, int energy)
           : base(world, position)
@@ -31,32 +29,32 @@ namespace VPS.Wator.Improved3
             Age++;
             Energy--;
 
-            Point fish = World.SelectNeighbor(Position, true);  // find a random neighboring fish
+            Point fish = World.SelectNeighbor(typeof(Fish), Position);  // find a random neighboring fish
             if (fish.X != -1)
             {
                 // neighboring fish found -> eat and move to that position
-                Energy += World.Grid[fish.X, fish.Y].Energy;
+                Energy += World.Grid[fish.Y * World.Width + fish.X].Energy;
                 Move(fish);
             }
             else
             {  // no neighboring fish found
-                Point free = World.SelectNeighbor(Position);  // find a random empty neighboring cell
+                Point free = World.SelectNeighbor(null, Position);  // find a random empty neighboring cell
                 if (free.X != -1) Move(free);  // empty cell found -> move there
             }
 
             if (Energy >= World.SharkBreedEnergy) Spawn();  // enough energy -> spawn
-            if (Energy <= 0) World.Grid[Position.X, Position.Y] = null;  // not enough energy -> die
+            if (Energy <= 0) World.Grid[Position.Y * World.Width + Position.X] = null;  // not enough energy -> die
         }
 
         // spawning behaviour of sharks
         protected override void Spawn()
         {
-            Point free = World.SelectNeighbor(Position);  // find a random empty neighboring cell
+            Point free = World.SelectNeighbor(null, Position);  // find a random empty neighboring cell
             if (free.X != -1)
             {
                 // empty neighboring cell found -> create new shark there and share energy between parent and child shark
-                Shark shark = new Shark(World, free, Energy / 2);
-                Energy = Energy / 2;
+                Energy /= 2;
+                new Shark(World, free, Energy);
             }
         }
     }

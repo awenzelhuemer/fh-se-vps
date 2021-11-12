@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace VPS.Wator.Improved3
@@ -12,15 +13,18 @@ namespace VPS.Wator.Improved3
         // This matrix is shuffled in each time step.
         // Cells of the world must be executed in a random order,
         // otherwise the animal in the first cell is always allowed to move first.
-        private int[,] randomMatrix;
+        private int[] randomMatrix;
 
         // for visualization
         private byte[] rgbValues;
 
+        // neighbour points
+        private readonly IList<Point> points = new List<Point>();
+
         #region Properties
         public int Width { get; private set; }  // width (number of cells) of the world
         public int Height { get; private set; }  // height (number of cells) of the world
-        public Animal[,] Grid { get; private set; }  // the cells of the world (2D-array of animal (fish or shark), empty cells have the value null)
+        public Animal[] Grid { get; private set; }  // the cells of the world (2D-array of animal (fish or shark), empty cells have the value null)
 
         // simulation parameters
         public int InitialFishPopulation { get; private set; }
@@ -32,20 +36,10 @@ namespace VPS.Wator.Improved3
         public int SharkBreedEnergy { get; private set; }
         #endregion
 
-
-        private Point[] neighborsWithOffset;
-
-
         public Improved3WatorWorld(Settings settings)
         {
             Width = settings.Width;
             Height = settings.Height;
-            neighborsWithOffset = new Point[] {
-                new Point { X = 0, Y = Height - 1}, // Look north
-                new Point { X = 1, Y = 0 }, // Look east
-                new Point { X = 0, Y = 1}, // Look south
-                new Point { X = Width - 1, Y = 0} // Look west
-            };
             InitialFishPopulation = settings.InitialFishPopulation;
             InitialFishEnergy = settings.InitialFishEnergy;
             FishBreedTime = settings.FishBreedTime;
@@ -56,7 +50,7 @@ namespace VPS.Wator.Improved3
             rgbValues = new byte[Width * Height * 4];
 
             random = new Random();
-            Grid = new Animal[Width, Height];
+            Grid = new Animal[Width * Height];
 
             // populate the random matrix that determines the order of execution for the cells
             randomMatrix = GenerateRandomMatrix(Width, Height);
@@ -68,26 +62,30 @@ namespace VPS.Wator.Improved3
             // randomMatrix is smaller then the number of fish 
             // subsequently we can place a shark if the number in randomMatrix is smaller than
             // the number of fish and shark
-            for (int i = 0; i < Width; i++)
+            for (int col = 0; col < Width; col++)
             {
-                for (int j = 0; j < Height; j++)
+                for (int row = 0; row < Height; row++)
                 {
-                    int value = randomMatrix[i, j];
+                    int value = randomMatrix[GetGridIndex(row, col)];
                     if (value < InitialFishPopulation)
                     {
-                        Grid[i, j] = new Fish(this, new Point(i, j), random.Next(0, FishBreedTime));
+                        Grid[GetGridIndex(row, col)] = new Fish(this, new Point(col, row), random.Next(0, FishBreedTime));
                     }
                     else if (value < InitialFishPopulation + InitialSharkPopulation)
                     {
-                        Grid[i, j] = new Shark(this, new Point(i, j), random.Next(0, SharkBreedEnergy));
+                        Grid[GetGridIndex(row, col)] = new Shark(this, new Point(col, row), random.Next(0, SharkBreedEnergy));
                     }
                     else
                     {
-                        Grid[i, j] = null;
+                        Grid[GetGridIndex(row, col)] = null;
                     }
                 }
             }
+        }
 
+        public int GetGridIndex(int row, int column)
+        {
+            return row * Width + column;
         }
 
         // Execute one time step of the simulation. Each cell of the world must be executed once.
@@ -98,27 +96,28 @@ namespace VPS.Wator.Improved3
             RandomizeMatrix(randomMatrix);  // make sure that order of execution of cells is different and random in each time step
 
             // process all animals in random order
-            int row, col;
-            for (int i = 0; i < Width; i++)
+            int random_row, random_col;
+            for (int col = 0; col < Width; col++)
             {
-                for (int j = 0; j < Height; j++)
+                for (int row = 0; row < Height; row++)
                 {
                     // get random position (row/colum) from random matrix
-                    col = randomMatrix[i, j] % Width;
-                    row = randomMatrix[i, j] / Width;
+                    random_col = randomMatrix[GetGridIndex(row, col)] % Width;
+                    random_row = randomMatrix[GetGridIndex(row, col)] / Width;
 
-                    if (Grid[col, row] != null && !Grid[col, row].Moved)  // process unmoved animals
-                        Grid[col, row].ExecuteStep();
+                    var animal = Grid[GetGridIndex(random_row, random_col)];
+
+                    if (animal != null && !animal.Moved)  // process unmoved animals
+                        animal.ExecuteStep();
                 }
             }
 
             // commit all animals in the grid to prepare for the next simulation step
-            for (int i = 0; i < Width; i++)
+            for (int col = 0; col < Width; col++)
             {
-                for (int j = 0; j < Height; j++)
+                for (int row = 0; row < Height; row++)
                 {
-                    if (Grid[i, j] != null)
-                        Grid[i, j].Commit();
+                    Grid[GetGridIndex(row, col)]?.Commit();
                 }
             }
         }
@@ -127,18 +126,18 @@ namespace VPS.Wator.Improved3
         public Bitmap GenerateImage()
         {
             int counter = 0;
-            for (int y = 0; y < Height; y++)
+            for (int row = 0; row < Height; row++)
             {
-                for (int x = 0; x < Width; x++)
+                for (int col = 0; col < Width; col++)
                 {
-                    Color col;
-                    if (Grid[x, y] == null) col = Color.DarkBlue;
-                    else col = Grid[x, y].Color;
+                    Color color;
+                    if (Grid[GetGridIndex(row, col)] == null) color = Color.DarkBlue;
+                    else color = Grid[GetGridIndex(row, col)].Color;
 
-                    rgbValues[counter++] = col.B; // blue
-                    rgbValues[counter++] = col.G; // green
-                    rgbValues[counter++] = col.R; // red
-                    rgbValues[counter++] = col.A; // alpha
+                    rgbValues[counter++] = color.B; // blue
+                    rgbValues[counter++] = color.G; // green
+                    rgbValues[counter++] = color.R; // red
+                    rgbValues[counter++] = color.A; // alpha
                 }
             }
 
@@ -165,39 +164,84 @@ namespace VPS.Wator.Improved3
         }
 
         // find all neighboring cells of the given position and type
-        public Point[] GetNeighbors(Point position, bool findNeighborFishes)
+        public IList<Point> GetNeighbors(Type type, Point position)
         {
-            Point[] neighbors = new Point[4];
-            int neighborIndex = 0;
+            points.Clear();
+            int i, j;
 
-            foreach (var neighborPos in this.neighborsWithOffset)
+            // look north
+            i = position.X;
+            j = (position.Y + Height - 1) % Height;
+            var animal = Grid[GetGridIndex(j, i)];
+            if (type == null && animal == null)
             {
-                var newPos = new Point((position.X + neighborPos.X) % Width, (position.Y + neighborPos.Y) % Height);
-                var animal = Grid[newPos.X, newPos.Y];
-                if ((findNeighborFishes && animal != null && !animal.Moved && animal.IsFish) // Find neighbor fish which was not moved
-                    || (!findNeighborFishes && animal == null)) // Find empty neighbor
+                points.Add(new Point(i, j));
+            }
+            else if (type != null && type.IsInstanceOfType(animal))
+            {
+                if (animal != null && !animal.Moved)
+                {  // ignore animals moved in the current iteration
+                    points.Add(new Point(i, j));
+                }
+            }
+            // look east
+            i = (position.X + 1) % Width;
+            j = position.Y;
+            animal = Grid[GetGridIndex(j, i)];
+            if (type == null && animal == null)
+            {
+                points.Add(new Point(i, j));
+            }
+            else if (type != null && type.IsInstanceOfType(animal))
+            {
+                if (animal != null && !animal.Moved)
                 {
-                    // ignore animals moved in the current iteration
-                    neighbors[neighborIndex] = newPos;
-                    neighborIndex++;
+                    points.Add(new Point(i, j));
+                }
+            }
+            // look south
+            i = position.X;
+            j = (position.Y + 1) % Height;
+            animal = Grid[GetGridIndex(j, i)];
+            if (type == null && animal == null)
+            {
+                points.Add(new Point(i, j));
+            }
+            else if (type != null && type.IsInstanceOfType(animal))
+            {
+                if (animal != null && !animal.Moved)
+                {
+                    points.Add(new Point(i, j));
+                }
+            }
+            // look west
+            i = (position.X + Width - 1) % Width;
+            j = position.Y;
+            animal = Grid[GetGridIndex(j, i)];
+            if (type == null && animal == null)
+            {
+                points.Add(new Point(i, j));
+            }
+            else if (type != null && type.IsInstanceOfType(animal))
+            {
+                if (animal != null && !animal.Moved)
+                {
+                    points.Add(new Point(i, j));
                 }
             }
 
-            // create result array that only contains found cells
-            Point[] result = new Point[neighborIndex];
-            Array.Copy(neighbors, result, neighborIndex);
-            return result;
+            return points;
         }
 
         // select a random neighboring cell of the given position and type
-        public Point SelectNeighbor(Point position, bool findNeighborFishes = false)
+        public Point SelectNeighbor(Type type, Point position)
         {
-            Point[] neighbors = GetNeighbors(position, findNeighborFishes);  // find all neighbors of required type
-            if (neighbors.Length > 1)
+            IList<Point> neighbors = GetNeighbors(type, position);  // find all neighbors of required type
+            if (neighbors.Count > 1)
             {
-                return neighbors[random.Next(neighbors.Length)];  // return random neighbor (prevent bias)
+                return neighbors[random.Next(neighbors.Count)];  // return random neighbor (prevent bias)
             }
-            else if (neighbors.Length == 1)
+            else if (neighbors.Count == 1)
             {  // only one neighbor -> return without calling random
                 return neighbors[0];
             }
@@ -208,49 +252,31 @@ namespace VPS.Wator.Improved3
         }
 
         // create a matrix containing all numbers from 0 to width * height in random order
-        private int[,] GenerateRandomMatrix(int width, int height)
+        private int[] GenerateRandomMatrix(int width, int height)
         {
-            int[,] matrix = new int[width, height];
+            int[] matrix = new int[width * height];
 
             int row = 0;
             int col = 0;
             for (int i = 0; i < matrix.Length; i++)
             {
-                matrix[col, row] = i;
+                matrix[GetGridIndex(row, col)] = i;
                 col++;
                 if (col >= width) { col = 0; row++; }
             }
             RandomizeMatrix(matrix);  // shuffle
             return matrix;
         }
-
-        // shuffle values of the matrix
-        private void RandomizeMatrix(int[,] matrix)
+        private void RandomizeMatrix(int[] array)
         {
             // perform Knuth shuffle (http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle)
-            int width = matrix.GetLength(0);
-            int height = matrix.GetLength(1);
-            int temp, selectedRow, selectedCol;
-
-            int row = 0;
-            int col = 0;
-            for (int i = 0; i < height * width; i++)
+            int size = array.Length;
+            for (int i = 0; i < (size - 2); i++)
             {
-                temp = matrix[col, row];
-
-                // select random element from remaining elements
-                // already processed elements must not be chosen a second time
-                selectedRow = random.Next(row, height);
-                if (selectedRow == row) selectedCol = random.Next(col, width);  // current row selected -> select from remaining columns
-                else selectedCol = random.Next(width);  // new row selected -> select any column
-
-                // swap
-                matrix[col, row] = matrix[selectedCol, selectedRow];
-                matrix[selectedCol, selectedRow] = temp;
-
-                // incremet col and row
-                col++;
-                if (col >= width) { col = 0; row++; }
+                int result = random.Next(i, size);
+                int temp = array[result];
+                array[result] = array[i];
+                array[i] = temp;
             }
         }
     }

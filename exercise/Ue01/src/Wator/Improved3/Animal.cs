@@ -1,5 +1,4 @@
 using System.Drawing;
-using VPS.Wator.Original;
 
 namespace VPS.Wator.Improved3
 {
@@ -28,8 +27,6 @@ namespace VPS.Wator.Improved3
         // the color of the enimal (e.g. fish=white, shark=red)
         public abstract Color Color { get; }
 
-        public abstract bool IsFish { get; }
-
         // ctor: create a new animal on the specified position of the given world
         public Animal(Improved3WatorWorld world, Point position)
         {
@@ -39,15 +36,15 @@ namespace VPS.Wator.Improved3
             Moved = true;
             Energy = 0;
             // place the new animal in the world
-            World.Grid[position.X, position.Y] = this;
+            World.Grid[position.Y * World.Width + position.X] = this;
         }
 
         // move the animal to a given position
         // does not check if the position can be reached by the animal
         protected void Move(Point destination)
         {
-            World.Grid[Position.X, Position.Y] = null;
-            World.Grid[destination.X, destination.Y] = this;
+            World.Grid[Position.Y * World.Width + Position.X] = null;
+            World.Grid[destination.Y * World.Width + destination.X] = this;
             Position = destination;
             Moved = true;
         }
