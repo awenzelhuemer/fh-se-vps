@@ -15,12 +15,19 @@
 
 == Setup
 
-----
-Number of cores: 4
-Memory size 16,0 GB
-CPU type: Intel Core i7-8565U 1.80GHz
-System: Windows 11
-----
+[cols="1,1"]
+|===
+|Memory size
+|16,0 GB
+|CPU type
+|Intel Core i7-8565U 1.80GHz
+|Number of cores
+|4
+|System
+|Windows 11 Education N
+|IDE
+|Visual Studio 2019
+|===
 
 == Theory
 
@@ -55,20 +62,17 @@ image::{img}/1_3.png[]
 
 === Review of the application
 
-==== Design
-The methods are too long and could often be simplified. Also some methods could be created in separate classes instead they are all in OriginalWatorWorld.
+Methods:
+The Methods are too long and not very easy to read. For example the GetNeighbour-Method has a lot of redundant operations which could be easily simplified. Also there is the possibility to extract parts of the methods into separate ones to improve readability.
 
-==== Efficiency
-The program in case of efficiency has definitely potential for improvement. For example the use of two dimensional arrays or the creation of an position array each time the GetNeighbors function is called is not ideal. Also the shuffle method is not very well implemented.
+Technology:
+WinForms is an old microsoft technology from microsoft for desktop development. Nowadays far better technologies exist for such a purpose. Additionally the application works only on windows and doesn't be run on other operation systems.
 
-==== Clarity
-With the GetNeighbors function, the if else constructs are not very ideal to read and could be improved or separate methods could be created.
+Settings should not be hardcoded, instead they should be available over an general settings file.
 
-==== Readability
+The application also has a lot of potential for performance improvements which will be addressed in the next chapter.
 
-Readability is definitely not the best. For example the GetNeighbours function is too long with lots of code duplications.
-
-=== Three improvements
+=== Three performance improvements
 
 ==== Improvement 1
 
