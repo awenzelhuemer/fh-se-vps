@@ -5,6 +5,7 @@
 :experimental:
 :listing-caption: Listing
 :source-highlighter: rouge
+:src: ../src
 :img: ./img
 :toc:
 :numbered:
@@ -14,3 +15,111 @@
 <<<
 
 == Race conditions
+
+=== Create an simple race condition
+
+Simple race condition where x gets incremented.
+Because twice threads increment x at the same time, a race condition occurs and x is 1 instead of two.
+To prevent this a lock object gets created and the lock operation gets called each time x is incremented.
+
+.Program with simple race condition
+[source, csharp]
+----
+static readonly DateTime startTime = DateTime.Now.AddSeconds(1);
+
+private static void RaceCondition()
+{
+    Console.WriteLine("With race condition");
+
+    int x = 0;
+    void incrementX()
+    {
+        while (DateTime.Now < startTime)
+        {
+            //do nothing
+        }
+
+        x++;
+    }
+
+    Thread worker1 = new(incrementX);
+    Thread worker2 = new(incrementX);
+
+    worker1.Start();
+    worker2.Start();
+
+    worker1.Join();
+    worker2.Join();
+
+    Console.WriteLine($"x => {x}");
+
+}
+----
+
+.Fixed race condition with lock object
+[source, csharp]
+----
+static readonly DateTime startTime = DateTime.Now.AddSeconds(1);
+private static void FixedRaceCondition()
+{
+    Console.WriteLine("With fixed race condition");
+
+    int x = 0;
+    object locker = new();
+
+    void incrementX()
+    {
+        while (DateTime.Now < startTime)
+        {
+            //do nothing
+        }
+
+        // Locking for x to prevent race condition
+        lock (locker)
+        {
+            x++;
+        }
+    }
+
+    Thread worker1 = new(incrementX);
+    Thread worker2 = new(incrementX);
+
+    worker1.Start();
+    worker2.Start();
+
+    worker1.Join();
+    worker2.Join();
+
+    Console.WriteLine($"x => {x}");
+}
+----
+
+
+=== Find the race condition
+
+The race condition occurs because the writer continuously adds new values to the buffer and old ones gets overwritten, because the writer doesn't wait for the reader.
+
+One possible solution would be to use two events, one for the reader and one for the writer. Here both threads could be synchronized.
+
+[source, csharp]
+----
+include::{src}/RaceConditions2/Program.cs[]
+----
+
+== Synchronisation primitives
+
+The synchronisation is possible by adding threads to a list and call join when 10 items are added.
+
+.Combine 10 downloads
+[source, csharp]
+----
+include::{src}/SynchronizationPrimitives/Program.cs[lines=12..28]
+----
+
+All downloads are even easier because thread.join() can be called for all threads in list.
+
+.Combine all downloads
+[source, csharp]
+----
+include::{src}/SynchronizationPrimitives/Program.cs[lines=30..42]
+----
