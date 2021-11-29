@@ -4,7 +4,6 @@
 
 # Custom
 *.zip
-*.pdf
 
 ### Csharp ###
 ## Ignore Visual Studio temporary files, build results, and
