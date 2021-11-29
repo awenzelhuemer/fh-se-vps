@@ -100,7 +100,11 @@ private static void FixedRaceCondition()
 The race condition occurs because the writer continuously adds new values to the buffer and old ones gets overwritten, because the writer doesn't wait for the reader.
 
 One possible solution would be to use two events, one for the reader and one for the writer. Here both threads could be synchronized.
+The buffer would be useless with this solution, thats why two semaphores were used instead.
+One to signal the reader, that items are available to read and one to signal that an item was read successful and the writer can continue writing.
+Both semaphores are initialized with a capacity of 10 to work correctly with the buffer.
 
+.Semaphores
 [source, csharp]
 ----
 include::{src}/RaceConditions2/Program.cs[]
