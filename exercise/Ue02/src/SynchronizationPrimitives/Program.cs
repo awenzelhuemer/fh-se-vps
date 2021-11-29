@@ -11,47 +11,38 @@ namespace SynchronizationPrimitives
         {
             public void DownloadFilesAsync(IEnumerable<string> urls)
             {
-                List<Thread> threads = new();
-
+                ThreadPool.SetMaxThreads(10, 10);
                 foreach (var url in urls)
                 {
-                    Thread t = new(DownloadFile);
-                    t.Start(url);
-                    threads.Add(t);
-
-                    if (threads.Count == 10 || urls.Last().Equals(url))
-                    {
-                        threads.ForEach(thread => thread.Join());
-                        threads.Clear();
-                    }
+                    ThreadPool.QueueUserWorkItem(DownloadFile, url);
                 }
             }
 
             public void DownloadFiles(IEnumerable<string> urls)
             {
-                List<Thread> threads = new();
-
+                var downloadCount = urls.Count();
+                using ManualResetEvent resetEvent = new(false);
                 foreach (var url in urls)
                 {
-                    var thread = new Thread(DownloadFile);
-                    thread.Start(url);
-                    threads.Add(thread);
+                    ThreadPool.QueueUserWorkItem(x =>
+                    {
+                        DownloadFile(x);
+                        if (Interlocked.Decrement(ref downloadCount) == 0)
+                            resetEvent.Set();
+                    }, url);
                 }
-
-                threads.ForEach(thread => thread.Join());
+                resetEvent.WaitOne();
             }
 
             private void DownloadFile(object url)
             {
-                Random r = new();
-                Thread.Sleep(r.Next(200, 5000));
                 Console.WriteLine($"Download file from {url}");
             }
         }
 
         static void Main(string[] args)
         {
-            new LimitedConnectionsExample().DownloadFilesAsync(new List<string>{
+            new LimitedConnectionsExample().DownloadFiles(new List<string>{
             "www.google1.com",
             "www.google2.com",
             "www.google3.com",
