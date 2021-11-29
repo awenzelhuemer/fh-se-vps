@@ -112,18 +112,19 @@ include::{src}/RaceConditions2/Program.cs[]
 
 == Synchronisation primitives
 
-The synchronisation is possible by adding threads to a list and call join when 10 items are added.
+The synchronisation is possible by using a thread pool where the size is set to 10.
+All threads get added to the thread pool.
 
 .Combine 10 downloads
 [source, csharp]
 ----
-include::{src}/SynchronizationPrimitives/Program.cs[lines=12..28]
+include::{src}/SynchronizationPrimitives/Program.cs[lines=12..19]
 ----
 
-All downloads are even easier because thread.join() can be called for all threads in list.
+This is possible by using Interlocked.Decrement where the count gets continually decreased. When the count is zero, an ManualResetEvent is used by calling Set(). Until set is called the method waits at the end with WaitOne().
 
 .Combine all downloads
 [source, csharp]
 ----
-include::{src}/SynchronizationPrimitives/Program.cs[lines=30..42]
+include::{src}/SynchronizationPrimitives/Program.cs[lines=21..35]
 ----
