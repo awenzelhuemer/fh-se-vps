@@ -11,7 +11,7 @@ namespace VPS.ToiletSimulation
             int randomSeed = new Random().Next();
             IQueue q;
 
-            q = new FIFOQueue();
+            q = new ToiletQueue();
             TestQueue(q, randomSeed);
 
             // q = new ToiletQueue(); TestQueue(q, randomSeed);
@@ -46,9 +46,7 @@ namespace VPS.ToiletSimulation
 
             Analysis.Display();
 
-            Console.WriteLine();
-            Console.WriteLine();
-            Console.WriteLine();
+            Console.ReadLine();
         }
 
         #endregion

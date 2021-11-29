@@ -128,3 +128,30 @@ This is possible by using Interlocked.Decrement where the count gets continually
 ----
 include::{src}/SynchronizationPrimitives/Program.cs[lines=21..35]
 ----
+
+== Toilet simulation
+
+=== FIFO queue
+
+A and b were already implemented during the lesson.
+In the following table you can see the test results:
+
+.Test results
+image::{img}/FIFO_Calculation.png[]
+
+=== Priority queue
+
+Instead of a fifo queue, a priority queue is used.
+Jobs that are due earlier get prioritized and jobs where the due date is in the past get executed last because it's already to late.
+
+Here you can see that the starvation rate is way lower than with the fifo queue.
+
+.Test results
+image::{img}/Priority_Calculation.png[]
+
+==== Code
+
+[source, csharp]
+----
+include::{src}/ToiletSimulation/ToiletQueue.cs[]
+----
