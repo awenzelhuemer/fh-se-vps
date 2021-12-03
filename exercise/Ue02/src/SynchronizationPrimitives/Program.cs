@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 
 namespace SynchronizationPrimitives
@@ -9,34 +8,43 @@ namespace SynchronizationPrimitives
     {
         class LimitedConnectionsExample
         {
+            readonly Semaphore semaphore = new(10, 10);
+
             public void DownloadFilesAsync(IEnumerable<string> urls)
             {
-                ThreadPool.SetMaxThreads(10, 10);
-                foreach (var url in urls)
+                new Thread(_ =>
                 {
-                    ThreadPool.QueueUserWorkItem(DownloadFile, url);
-                }
+                    foreach (var url in urls)
+                    {
+                        semaphore.WaitOne();
+                        new Thread(DownloadFile).Start(url);
+                    }
+                }).Start();
             }
 
             public void DownloadFiles(IEnumerable<string> urls)
             {
-                var downloadCount = urls.Count();
-                using ManualResetEvent resetEvent = new(false);
+                ICollection<Thread> threads = new List<Thread>();
+
                 foreach (var url in urls)
                 {
-                    ThreadPool.QueueUserWorkItem(x =>
-                    {
-                        DownloadFile(x);
-                        if (Interlocked.Decrement(ref downloadCount) == 0)
-                            resetEvent.Set();
-                    }, url);
+                    semaphore.WaitOne();
+                    Thread thread = new(DownloadFile);
+                    threads.Add(thread);
+                    thread.Start(url);
                 }
-                resetEvent.WaitOne();
+
+                foreach (var thread in threads)
+                {
+                    thread.Join();
+                }
             }
 
             private void DownloadFile(object url)
             {
+                Thread.Sleep(1000);
                 Console.WriteLine($"Download file from {url}");
+                semaphore.Release();
             }
         }
 

@@ -94,7 +94,7 @@ private static void FixedRaceCondition()
 }
 ----
 
-
+<<<
 === Find the race condition
 
 The race condition occurs because the writer continuously adds new values to the buffer and old ones gets overwritten, because the writer doesn't wait for the reader.
@@ -110,25 +110,36 @@ Both semaphores are initialized with a capacity of 10 to work correctly with the
 include::{src}/RaceConditions2/Program.cs[]
 ----
 
+<<<
 == Synchronisation primitives
 
-The synchronisation is possible by using a thread pool where the size is set to 10.
-All threads get added to the thread pool.
+The synchronisation is possible by using a semaphore with capacity 10 and initial count of 10.
+In the DownloadFile-Method `Release()` gets called for each call.
+To prevent the method from blocking the main thread, an additional thread is placed around the foreach-Loop.
 
 .Combine 10 downloads
 [source, csharp]
 ----
-include::{src}/SynchronizationPrimitives/Program.cs[lines=12..19]
+include::{src}/SynchronizationPrimitives/Program.cs[lines=11..23]
 ----
 
-This is possible by using Interlocked.Decrement where the count gets continually decreased. When the count is zero, an ManualResetEvent is used by calling Set(). Until set is called the method waits at the end with WaitOne().
+<<<
+Instead of placing a thread around, every started thread gets added to a list.
+In a second loop all threads of the list get joined with the main thread, which synchronizes them.
 
 .Combine all downloads
 [source, csharp]
 ----
-include::{src}/SynchronizationPrimitives/Program.cs[lines=21..35]
+include::{src}/SynchronizationPrimitives/Program.cs[lines=25..41]
 ----
 
+.DownloadFile
+[source, csharp]
+----
+include::{src}/SynchronizationPrimitives/Program.cs[lines=43..49]
+----
+
+<<<
 == Toilet simulation
 
 === FIFO queue
@@ -149,6 +160,7 @@ Here you can see that the starvation rate is way lower than with the fifo queue.
 .Test results
 image::{img}/Priority_Calculation.png[]
 
+<<<
 ==== Code
 
 [source, csharp]
