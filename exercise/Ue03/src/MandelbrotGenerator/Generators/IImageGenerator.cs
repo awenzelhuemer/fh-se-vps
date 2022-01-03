@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Drawing;
 
-namespace MandelbrotGenerator
+namespace MandelbrotGenerator.Generators
 {
     public interface IImageGenerator
     {

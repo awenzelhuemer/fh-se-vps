@@ -63,11 +63,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Area.cs" />
-    <Compile Include="BackgroundWorkerImageGenerator.cs" />
+    <Compile Include="Generators\BackgroundWorkerImageGenerator.cs" />
     <Compile Include="ColorSchema.cs" />
     <Compile Include="ImageGeneratedEventArgs.cs" />
-    <Compile Include="SyncImageGenerator.cs" />
-    <Compile Include="IImageGenerator.cs" />
+    <Compile Include="Generators\MultiAsyncThreadImageGenerator.cs" />
+    <Compile Include="Generators\SyncImageGenerator.cs" />
+    <Compile Include="Generators\IImageGenerator.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -83,7 +84,7 @@
     <Compile Include="SettingsDialog.Designer.cs">
       <DependentUpon>SettingsDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="AsyncThreadImageGenerator.cs" />
+    <Compile Include="Generators\AsyncThreadImageGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MandelbrotGenerator.Generators;
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
@@ -7,44 +8,28 @@ namespace MandelbrotGenerator
 {
     public class BackgroundWorkerImageGenerator : IImageGenerator
     {
+        #region Private Fields
+
         private BackgroundWorker backgroundWorker;
 
-        public event EventHandler<ImageGeneratedEventArgs> ImageGenerated;
+        #endregion
+
+        #region Public Constructors
 
         public BackgroundWorkerImageGenerator()
         {
             InitializeBackgroundWorker();
         }
 
-        private void InitializeBackgroundWorker()
-        {
-            backgroundWorker = new BackgroundWorker();
+        #endregion
 
-            backgroundWorker.DoWork += Run;
-            backgroundWorker.WorkerSupportsCancellation = true;
-            backgroundWorker.RunWorkerCompleted += Completed;
-        }
+        #region Public Events
 
-        private void Completed(object sender, RunWorkerCompletedEventArgs e)
-        {
-            if (e.Cancelled)
-            {
-                return;
-            }
+        public event EventHandler<ImageGeneratedEventArgs> ImageGenerated;
 
-            ImageGenerated?.Invoke(this, (ImageGeneratedEventArgs)e.Result);
-        }
+        #endregion
 
-        private void Run(object sender, DoWorkEventArgs e)
-        {
-            var area = (Area)e.Argument;
-
-            var watch = Stopwatch.StartNew();
-            var bitmap = GenerateImage(area, sender as BackgroundWorker, e);
-            var args = new ImageGeneratedEventArgs(bitmap, area, watch.Elapsed);
-
-            e.Result = args;
-        }
+        #region Private Methods
 
         private static Bitmap GenerateImage(Area area, BackgroundWorker worker, DoWorkEventArgs e)
         {
@@ -93,6 +78,40 @@ namespace MandelbrotGenerator
             return bitmap;
         }
 
+        private void Completed(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Cancelled)
+            {
+                return;
+            }
+
+            ImageGenerated?.Invoke(this, (ImageGeneratedEventArgs)e.Result);
+        }
+
+        private void InitializeBackgroundWorker()
+        {
+            backgroundWorker = new BackgroundWorker();
+
+            backgroundWorker.DoWork += Run;
+            backgroundWorker.WorkerSupportsCancellation = true;
+            backgroundWorker.RunWorkerCompleted += Completed;
+        }
+
+        private void Run(object sender, DoWorkEventArgs e)
+        {
+            var area = (Area)e.Argument;
+
+            var watch = Stopwatch.StartNew();
+            var bitmap = GenerateImage(area, sender as BackgroundWorker, e);
+            var args = new ImageGeneratedEventArgs(bitmap, area, watch.Elapsed);
+
+            e.Result = args;
+        }
+
+        #endregion
+
+        #region Public Methods
+
         public void GenerateImage(Area area)
         {
             if (backgroundWorker.IsBusy)
@@ -103,5 +122,7 @@ namespace MandelbrotGenerator
 
             backgroundWorker.RunWorkerAsync(area);
         }
+
+        #endregion
     }
 }
