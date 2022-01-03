@@ -32,13 +32,14 @@ namespace MandelbrotGenerator
                 Height = pictureBox.Height
             };
 
-            generator = new ThreadImageGenerator();
+            generator = new BackgroundWorkerImageGenerator();
             generator.ImageGenerated += OnImageGenerated;
         }
 
         private void UpdateImage(Area area)
         {
             toolStripStatusLabel.Text = "Calculating ...";
+
             generator.GenerateImage(area);
         }
 
