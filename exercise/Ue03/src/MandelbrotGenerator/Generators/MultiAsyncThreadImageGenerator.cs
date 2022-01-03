@@ -78,6 +78,7 @@ namespace MandelbrotGenerator.Generators
             var sw = Stopwatch.StartNew();
             var bitmap = GenerateImagePart(area, tuple.Item2, tuple.Item3, tuple.Item4, tuple.Item5, cancellationToken);
             sw.Stop();
+
             OnImageGenerated(area, bitmap, sw.Elapsed, index);
         }
 
@@ -88,14 +89,14 @@ namespace MandelbrotGenerator.Generators
             {
                 var startWidth = 0;
                 var startHeight = 0;
-                for (var i = 0; i < bitmaps.Length; i++)
+                for (var x = 0; x < bitmaps.Length; x++)
                 {
-                    graphics.DrawImage(bitmaps[i], startWidth, startHeight);
-                    startHeight += bitmaps[i].Height;
+                    graphics.DrawImage(bitmaps[x], startWidth, startHeight);
+                    startHeight += bitmaps[x].Height;
                     if (startHeight >= area.Height)
                     {
                         startHeight = 0;
-                        startWidth += bitmaps[i].Width;
+                        startWidth += bitmaps[x].Width;
                     }
                 }
             }
@@ -143,25 +144,22 @@ namespace MandelbrotGenerator.Generators
 
             var fractionWidth = (int)Math.Floor((double)area.Width / cols);
             var fractionHeight = (int)Math.Floor((double)area.Height / rows);
-            var bitmapCount = (int)Math.Ceiling((double)area.Width / fractionWidth) *
-                        (int)Math.Ceiling((double)area.Height / fractionHeight);
 
-            bitmaps = new Bitmap[bitmapCount];
+            bitmaps = new Bitmap[rows * cols];
 
-            var index = 0;
-            for (var x = 0; x * fractionWidth < area.Width; x++)
+            int startWidth = 0;
+            int startHeight = 0;
+            for (int i = 0; i < rows * cols; i++)
             {
-                var startWidth = x * fractionWidth;
-                var endWidth = startWidth + fractionWidth > area.Width ? area.Width : startWidth + fractionWidth;
-                for (var y = 0; y * fractionHeight < area.Height; y++)
+                int endWidth = startWidth + fractionWidth >= area.Width - 1 ? area.Width : startWidth + fractionWidth;
+                int endHeight = startHeight + fractionHeight >= area.Height - 1 ? area.Height : startHeight + fractionHeight;
+                var thread = new Thread(GenerateImagePart);
+                thread.Start(new Tuple<Area, int, int, int, int, int, CancellationToken>(area, startWidth, endWidth, startHeight, endHeight, i, cancellationToken.Token));
+                startHeight += fractionHeight;
+                if (endHeight == area.Height)
                 {
-                    var startHeight = y * fractionHeight;
-                    var endHeight = startHeight + fractionHeight > area.Height
-                        ? area.Height
-                        : startHeight + fractionHeight;
-                    var thread = new Thread(GenerateImagePart);
-                    thread.Start(new Tuple<Area, int, int, int, int, int, CancellationToken>(area, startWidth, endWidth, startHeight, endHeight, index, cancellationToken.Token));
-                    index++;
+                    startHeight = 0;
+                    startWidth += fractionWidth;
                 }
             }
         }

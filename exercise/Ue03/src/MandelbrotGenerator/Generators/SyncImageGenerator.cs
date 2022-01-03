@@ -16,6 +16,8 @@ namespace MandelbrotGenerator.Generators
 
         public void GenerateImage(Area area)
         {
+            Stopwatch stopWatch = Stopwatch.StartNew();
+
             int maxIterations;
             double zBorder;
             double cReal, cImg, zReal, zImg, zNewReal, zNewImg;
@@ -47,9 +49,9 @@ namespace MandelbrotGenerator.Generators
                 }
             }
 
-            Stopwatch stopWatch = Stopwatch.StartNew();
-            ImageGenerated?.Invoke(this, new ImageGeneratedEventArgs(bitmap, area, stopWatch.Elapsed));
             stopWatch.Stop();
+            ImageGenerated?.Invoke(this, new ImageGeneratedEventArgs(bitmap, area, stopWatch.Elapsed));
+
         }
 
         #endregion

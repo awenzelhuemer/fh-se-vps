@@ -21,191 +21,55 @@ This is the code for the synchronous image generation.
 .Image generation
 [source, csharp]
 ----
-public static Bitmap GenerateImage(Area area)
-{
-    int maxIterations;
-    double zBorder;
-    double cReal, cImg, zReal, zImg, zNewReal, zNewImg;
-
-    maxIterations = Settings.DefaultSettings.MaxIterations;
-    zBorder = Settings.DefaultSettings.ZBorder * Settings.DefaultSettings.ZBorder;
-
-    Bitmap bitmap = new Bitmap(area.Width, area.Height);
-
-    for (int x = 0; x < area.Width; x++)
-    {
-        cReal = area.MinReal + x * area.PixelWidth;
-        for (int y = 0; y < area.Height; y++)
-        {
-            cImg = area.MinImg + y * area.PixelHeight;
-            zReal = 0.0;
-            zImg = 0.0;
-            int iteration = 0;
-            while (iteration < maxIterations // Check if smaller max iterations
-                && zReal * zReal + zImg * zImg < zBorder) // Check if in border
-            {
-                zNewReal = zReal * zReal - zImg * zImg + cReal;
-                zNewImg = zReal * zImg * 2 + cImg;
-                zReal = zNewReal;
-                zImg = zNewImg;
-                iteration += 1;
-            }
-            bitmap.SetPixel(x, y, ColorSchema.GetColor(iteration));
-        }
-    }
-
-    return bitmap;
-}
+include::{src}/MandelBrotGenerator/Generators/SyncImageGenerator.cs[]
 ----
 
 <<<
 == Worker thread
 
-=== Solution with delegate
+=== Solution with thread
 
 One possible solution would be to create each time a new thread which starts the image execution. If the method is currently executing an image generation, the previous generation gets cancelled via `CancellationTokenSource`. Additionally if the image was generated successfully, an event gets fired where the new image, area and time gets passed with `EventArgs`.
 
-.Image generator with delegate
+.Image generator with thread
 [source, csharp]
 ----
-public void GenerateImage(Area area)
-{
-    cancellationTokenSource.Cancel(); // Cancel previous calculation
-    cancellationTokenSource = new CancellationTokenSource(); // Create new cancellation source
-    var token = cancellationTokenSource.Token;
-    thread = new Thread(() =>
-    {
-        var watch = Stopwatch.StartNew();
-        var bitmap = SyncImageGenerator.GenerateImage(area, token);
-        var args = new ImageGeneratedEventArgs(bitmap, area, watch.Elapsed);
-        if (!token.IsCancellationRequested)
-        {
-            ImageGenerated?.Invoke(this, args);
-        }
-    });
-    thread.Start();
-}
+include::{src}/MandelBrotGenerator/Generators/AsyncThreadImageGenerator.cs[]
 ----
 
 === Solution with background worker
 
 BackgroundWorker is used for image generation.
 Previous worker gets cancelled if new worker gets created and started.
+Two callback methods are used: `DoWork` and `RunWorkerCompleted`.
+Additionally the flag `WorkerSupportsCancellation` has to be set.
 
 .Image generator with background worker
 [source, csharp]
 ----
-using System;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Drawing;
-
-namespace MandelbrotGenerator
-{
-    public class BackgroundWorkerImageGenerator : IImageGenerator
-    {
-        private BackgroundWorker backgroundWorker;
-
-        public event EventHandler<ImageGeneratedEventArgs> ImageGenerated;
-
-        public BackgroundWorkerImageGenerator()
-        {
-            InitializeBackgroundWorker();
-        }
-
-        private void InitializeBackgroundWorker()
-        {
-            backgroundWorker = new BackgroundWorker();
-
-            backgroundWorker.DoWork += Run;
-            backgroundWorker.WorkerSupportsCancellation = true;
-            backgroundWorker.RunWorkerCompleted += Completed;
-        }
-
-        private void Completed(object sender, RunWorkerCompletedEventArgs e)
-        {
-            if (e.Cancelled)
-            {
-                return;
-            }
-
-            ImageGenerated?.Invoke(this, (ImageGeneratedEventArgs)e.Result);
-        }
-
-        private void Run(object sender, DoWorkEventArgs e)
-        {
-            var area = (Area)e.Argument;
-
-            var watch = Stopwatch.StartNew();
-            var bitmap = GenerateImage(area, sender as BackgroundWorker, e);
-            var args = new ImageGeneratedEventArgs(bitmap, area, watch.Elapsed);
-
-            e.Result = args;
-        }
-
-        private static Bitmap GenerateImage(Area area, BackgroundWorker worker, DoWorkEventArgs e)
-        {
-            if (worker.CancellationPending)
-            {
-                e.Cancel = true;
-                return null;
-            }
-
-            int maxIterations;
-            double zBorder;
-            double cReal, cImg, zReal, zImg, zNewReal, zNewImg;
-
-            maxIterations = Settings.DefaultSettings.MaxIterations;
-            zBorder = Settings.DefaultSettings.ZBorder * Settings.DefaultSettings.ZBorder;
-
-            Bitmap bitmap = new Bitmap(area.Width, area.Height);
-
-            for (int x = 0; x < area.Width; x++)
-            {
-                if (worker.CancellationPending)
-                {
-                    e.Cancel = true;
-                    return null;
-                }
-                cReal = area.MinReal + x * area.PixelWidth;
-                for (int y = 0; y < area.Height; y++)
-                {
-                    cImg = area.MinImg + y * area.PixelHeight;
-                    zReal = 0.0;
-                    zImg = 0.0;
-                    int iteration = 0;
-                    while (iteration < maxIterations // Check if smaller max iterations
-                        && zReal * zReal + zImg * zImg < zBorder) // Check if in border
-                    {
-                        zNewReal = zReal * zReal - zImg * zImg + cReal;
-                        zNewImg = zReal * zImg * 2 + cImg;
-                        zReal = zNewReal;
-                        zImg = zNewImg;
-                        iteration += 1;
-                    }
-                    bitmap.SetPixel(x, y, ColorSchema.GetColor(iteration));
-                }
-            }
-
-            return bitmap;
-        }
-
-        public void GenerateImage(Area area)
-        {
-            if (backgroundWorker.IsBusy)
-            {
-                backgroundWorker.CancelAsync();
-                InitializeBackgroundWorker();
-            }
-
-            backgroundWorker.RunWorkerAsync(area);
-        }
-    }
-}
+include::{src}/MandelBrotGenerator/Generators/BackgroundWorkerImageGenerator.cs[]
 ----
 
 <<<
 == Parallelize work
 
+The whole areal gets splitted into separate parts.
+Each part gets calculated separately.
+That means that for each each part an separate thread gets created.
+The number of rows and columns can be configured over the setting for the worker count.
+After the generation of each part they get merged into one bitmap.
+
+.Image generator with parallel generator
+[source, csharp]
+----
+include::{src}/MandelBrotGenerator/Generators/MultiAsyncThreadImageGenerator.cs[]
+----
+
 <<<
 == Runtime measurement
+
+The performance of the parallel generator is similar to the synchronized one.
+That's because there is much overhead, for example the merging of the bitmap parts and the calculation for each part.
+When the number of workers is changed to 8, the generation is twice as fast as the synchronized one.
+
+image::{img}/Performance.jpg[]

@@ -62,7 +62,7 @@ namespace MandelbrotGenerator
             MaxReal = -1.32; MaxImg = -0.02;
             maxIterations = 10000;
             zBorder = 4.0;
-            workers = 4;
+            workers = 8;
         }
     }
 }
