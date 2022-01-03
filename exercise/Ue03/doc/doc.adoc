@@ -53,7 +53,7 @@ include::{src}/MandelBrotGenerator/Generators/BackgroundWorkerImageGenerator.cs[
 <<<
 == Parallelize work
 
-The whole areal gets splitted into separate parts.
+The whole areal gets splitted into multiple rows and columns.
 Each part gets calculated separately.
 That means that for each each part an separate thread gets created.
 The number of rows and columns can be configured over the setting for the worker count.
@@ -72,4 +72,4 @@ The performance of the parallel generator is similar to the synchronized one.
 That's because there is much overhead, for example the merging of the bitmap parts and the calculation for each part.
 When the number of workers is changed to 8, the generation is twice as fast as the synchronized one.
 
-image::{img}/Performance.jpg[]
+image::{img}/Performance.png[]
