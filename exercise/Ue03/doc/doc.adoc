@@ -53,10 +53,9 @@ include::{src}/MandelBrotGenerator/Generators/BackgroundWorkerImageGenerator.cs[
 <<<
 == Parallelize work
 
-The whole areal gets splitted into multiple rows and columns.
+The whole areal gets separated into multiple columns (depending on the worker count setting).
 Each part gets calculated separately.
 That means that for each each part an separate thread gets created.
-The number of rows and columns can be configured over the setting for the worker count.
 After the generation of each part they get merged into one bitmap.
 
 .Image generator with parallel generator
@@ -68,8 +67,9 @@ include::{src}/MandelBrotGenerator/Generators/MultiAsyncThreadImageGenerator.cs[
 <<<
 == Runtime measurement
 
-The performance of the parallel generator is similar to the synchronized one.
-That's because there is much overhead, for example the merging of the bitmap parts and the calculation for each part.
-When the number of workers is changed to 8, the generation is twice as fast as the synchronized one.
+The performance of the parallel generator is better than the synchronized one, already with 4 workers.
+It looks like there is some overhead with the image merging and creating of multiple threads and the calculation for each part.
+When the number of workers is changed to 8, the generation gets drastically faster.
+The standard deviation gets also smaller with the parallel execution with 4 workers and even smaller with eight workers.
 
 image::{img}/Performance.png[]

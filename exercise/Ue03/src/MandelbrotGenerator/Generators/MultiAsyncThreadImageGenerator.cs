@@ -24,15 +24,14 @@ namespace MandelbrotGenerator.Generators
 
         #region Private Methods
 
-        private static Bitmap GenerateImagePart(Area area, int startWidth, int endWidth, int startHeight,
-            int endHeight, CancellationToken token)
+        private static Bitmap GenerateImagePart(Area area, int startWidth, int endWidth, CancellationToken token)
         {
             if (token.IsCancellationRequested)
             {
                 return null;
             }
 
-            Bitmap bitmap = new Bitmap(endWidth - startWidth, endHeight - startHeight);
+            Bitmap bitmap = new Bitmap(endWidth - startWidth, area.Height);
             int maxIterations = Settings.DefaultSettings.MaxIterations;
             double zBorder = Settings.DefaultSettings.ZBorder * Settings.DefaultSettings.ZBorder;
             double cReal, cImg, zReal, zImg, zNewReal, zNewImg;
@@ -45,7 +44,7 @@ namespace MandelbrotGenerator.Generators
                 }
 
                 cReal = area.MinReal + x * area.PixelWidth;
-                for (int y = startHeight; y < endHeight; y++)
+                for (int y = 0; y < area.Height; y++)
                 {
                     cImg = area.MinImg + y * area.PixelHeight;
                     zReal = 0.0;
@@ -61,7 +60,7 @@ namespace MandelbrotGenerator.Generators
                         iteration += 1;
                     }
 
-                    bitmap.SetPixel(x - startWidth, y - startHeight, ColorSchema.GetColor(iteration));
+                    bitmap.SetPixel(x - startWidth, y, ColorSchema.GetColor(iteration));
                 }
             }
 
@@ -70,13 +69,13 @@ namespace MandelbrotGenerator.Generators
 
         private void GenerateImagePart(object obj)
         {
-            var tuple = (Tuple<Area, int, int, int, int, int, CancellationToken>)obj;
+            var tuple = (Tuple<Area, int, int, int, CancellationToken>)obj;
             var area = tuple.Item1;
-            var index = tuple.Item6;
-            var cancellationToken = tuple.Item7;
+            var index = tuple.Item4;
+            var cancellationToken = tuple.Item5;
 
             var sw = Stopwatch.StartNew();
-            var bitmap = GenerateImagePart(area, tuple.Item2, tuple.Item3, tuple.Item4, tuple.Item5, cancellationToken);
+            var bitmap = GenerateImagePart(area, tuple.Item2, tuple.Item3, cancellationToken);
             sw.Stop();
 
             OnImageGenerated(area, bitmap, sw.Elapsed, index);
@@ -88,16 +87,10 @@ namespace MandelbrotGenerator.Generators
             using (Graphics graphics = Graphics.FromImage(result))
             {
                 var startWidth = 0;
-                var startHeight = 0;
-                for (var x = 0; x < bitmaps.Length; x++)
+                for (var index = 0; index < bitmaps.Length; index++)
                 {
-                    graphics.DrawImage(bitmaps[x], startWidth, startHeight);
-                    startHeight += bitmaps[x].Height;
-                    if (startHeight >= area.Height)
-                    {
-                        startHeight = 0;
-                        startWidth += bitmaps[x].Width;
-                    }
+                    graphics.DrawImage(bitmaps[index], startWidth, 0);
+                    startWidth += bitmaps[index].Width;
                 }
             }
 
@@ -127,40 +120,24 @@ namespace MandelbrotGenerator.Generators
             cancellationToken?.Cancel(false);
             cancellationToken = new CancellationTokenSource();
 
-            int rows;
-            int cols;
+            int cols = Settings.DefaultSettings.Workers;
+            int fractionWidth = area.Width / cols;
 
-            // Calculate how many image parts are needed
-            if (Settings.DefaultSettings.Workers > 1)
-            {
-                rows = 2;
-                cols = Settings.DefaultSettings.Workers / 2;
-            }
-            else
-            {
-                rows = 1;
-                cols = 1;
-            }
-
-            var fractionWidth = (int)Math.Floor((double)area.Width / cols);
-            var fractionHeight = (int)Math.Floor((double)area.Height / rows);
-
-            bitmaps = new Bitmap[rows * cols];
+            bitmaps = new Bitmap[cols];
 
             int startWidth = 0;
-            int startHeight = 0;
-            for (int i = 0; i < rows * cols; i++)
+            for (int i = 0; i < cols; i++)
             {
-                int endWidth = startWidth + fractionWidth >= area.Width - 1 ? area.Width : startWidth + fractionWidth;
-                int endHeight = startHeight + fractionHeight >= area.Height - 1 ? area.Height : startHeight + fractionHeight;
-                var thread = new Thread(GenerateImagePart);
-                thread.Start(new Tuple<Area, int, int, int, int, int, CancellationToken>(area, startWidth, endWidth, startHeight, endHeight, i, cancellationToken.Token));
-                startHeight += fractionHeight;
-                if (endHeight == area.Height)
+                int endWidth = startWidth + fractionWidth;
+
+                if (cols > 1 && i == cols - 1) // Fix problems with rounding for last column
                 {
-                    startHeight = 0;
-                    startWidth += fractionWidth;
+                    endWidth += area.Width % cols;
                 }
+
+                var thread = new Thread(GenerateImagePart);
+                thread.Start(new Tuple<Area, int, int, int, CancellationToken>(area, startWidth, endWidth, i, cancellationToken.Token));
+                startWidth += fractionWidth;
             }
         }
 
