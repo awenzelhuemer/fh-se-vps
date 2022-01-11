@@ -4,7 +4,7 @@ namespace Diffusions.Generators
 {
     public class SequentialImageGenerator : ImageGenerator
     {
-        protected override void UpdateMatrix(Area area, CancellationToken token)
+        protected override void UpdateMatrix(Area area)
         {
             lock (area.Matrix)
             {
@@ -12,10 +12,6 @@ namespace Diffusions.Generators
 
                 for (int x = 0; x < area.Width; x++)
                 {
-                    if (token.IsCancellationRequested)
-                    {
-                        return;
-                    }
                     int pX = (x + area.Width - 1) % area.Width;
                     int nX = (x + 1) % area.Width;
 
@@ -23,7 +19,10 @@ namespace Diffusions.Generators
                     {
                         int pY = (y + area.Height - 1) % area.Height;
                         int nY = (y + 1) % area.Height;
-                        area.NextMatrix[x, y] = (m[pX, pY] + m[pX, y] + m[pX, nY] + m[x, pY] + m[x, nY] + m[nX, pY] + m[nX, y] + m[nX, nY]) / 8;
+                        area.NextMatrix[x, y] = (
+                            m[pX, pY] + m[pX, y] + m[pX, nY] +
+                            m[x, pY] + m[x, nY] +
+                            m[nX, pY] + m[nX, y] + m[nX, nY]) / 8;
                     }
                 }
                 var tmp = area.NextMatrix;
