@@ -68,6 +68,7 @@ namespace Diffusions
                 {
                     running = false;
                     startButton.Text = "Start";
+                    Console.WriteLine(e.Value.Item3.TotalMilliseconds);
                     toolStripStatusLabel.Text = "Done (Runtime: " + e.Value.Item3 + ")";
                 }
                 else

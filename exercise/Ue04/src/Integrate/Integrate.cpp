@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <chrono>
+using namespace std::chrono;
 
 double f(double x) {
 	return 4.0 / (1.0 + x * x);
@@ -36,20 +37,21 @@ int main() {
 	int n;
 	std::cout << std::endl << "Enter n: ";
 	std::cin >> n;
+
+	std::cout << "StepSize " << "ResultSeq " << "TimeSeq " << "ResultPar " << "TimePar" << std::endl;
+
 	while (n < 100000000) {
 		auto start = std::chrono::high_resolution_clock::now();
 		auto res = integrate(0.0, 1.0, n);
-		auto end = std::chrono::high_resolution_clock::now();
-		std::chrono::duration<double, std::milli> time = end - start;
-		double timeSeq = time.count();
+		std::chrono::duration<double, std::milli> time = std::chrono::high_resolution_clock::now() - start;
+		double timeSeq = (long long)(duration_cast<microseconds>(time).count());
 
 		start = std::chrono::high_resolution_clock::now();
 		auto resOMP = integrateOMP(0.0, 1.0, n);
-		end = std::chrono::high_resolution_clock::now();
-		time = end - start;
-		double timeOMP = time.count();
+		time = std::chrono::high_resolution_clock::now() - start;
+		double timeOMP = (long long)(duration_cast<microseconds>(time).count());
 
-		std::cout << n << ": " << res << " seq(ms) " << timeSeq << " " << resOMP << " omp (ms) " << timeOMP << std::endl;
+		std::cout << n << " " << res << " " << timeSeq << " " << resOMP << " " << timeOMP << std::endl;
 		n *= 10;
 	}
 }

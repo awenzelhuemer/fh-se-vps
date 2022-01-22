@@ -1,6 +1,4 @@
-﻿using System.Threading;
-
-namespace Diffusions.Generators
+﻿namespace Diffusions.Generators
 {
     public class SequentialImageGenerator : ImageGenerator
     {

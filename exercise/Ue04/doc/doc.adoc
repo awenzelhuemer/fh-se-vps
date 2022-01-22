@@ -1,0 +1,109 @@
+= Übung 4
+:author: Andreas Wenzelhuemer
+:email: <S1910307106@fhooe.at>
+:reproducible:
+:experimental:
+:listing-caption: Listing
+:source-highlighter: rouge
+:src: ../src
+:img: ./img
+:toc:
+:numbered:
+:toclevels: 5
+:rouge-style: github
+
+== Setup
+
+[cols="1,1"]
+|===
+|Memory size
+|16,0 GB
+|CPU type
+|Intel Core i7-8565U 1.80GHz
+|Number of cores
+|4
+|System
+|Windows 11 Education N
+|IDE
+|Visual Studio 2022
+|===
+
+<<<
+== Psychedelic Diffusions
+
+=== Simulation Logic
+
+.SequentialImageGenerator.cs
+[source, csharp]
+----
+include::{src}/Diffusions/Generators/SequentialImageGenerator.cs[]
+----
+
+=== Background Computing
+
+When the method `Start` gets called, a new `Task` gets started.
+Additionally an `CancellationTokenSource` gets created.
+When `Stop` gets called, `cancellationTokenSource.Cancel()` gets executed.
+The loop where the iterations are running, gets canceled and the simulation stops. 
+
+.ImageGenerator.cs
+[source, csharp]
+----
+include::{src}/Diffusions/Generators/ImageGenerator.cs[]
+----
+
+=== Parallel Version
+
+Fore the parallel execution, `Parallel.forEach` gets used instead of a normal loop.
+The calculation gets splitted into tiny parts of work.
+For the separation into separate parts, a `Partitioner` gets used which splits the width for the calculation.
+
+.ParallelImageGenerator.cs
+[source, csharp]
+----
+include::{src}/Diffusions/Generators/ParallelImageGenerator.cs[]
+----
+
+.Parallel result
+image::{img}/Diffusions_Parallel.png[]
+
+.Sequential result
+image::{img}/Diffusions_Sequential.png[]
+
+==== Speedup
+
+Speedup = 2,9134082 / 2,334388 = 1,24804
+
+The parallel version is 24,804 percent faster than the sequential one.
+
+== Parallel Numerical Integration
+
+=== C++ OpenMP
+
+.ParallelImageGenerator.cs
+[source, cpp]
+----
+include::{src}/Integrate/Integrate.cpp[lines=20..29]
+----
+
+=== C# .NET Task Parallel Library
+
+The calculation gets separated into steps with the `Partitioner`, similar to the the OpenMP solution.
+Additionally `Parallel.ForEach` gets called, the initial state gets set to zero.
+For the second part all partitioned parts gets calculated separately.
+The result gets added to the total result.
+To prevent race conditions, an lock object is needed when a part sum gets added to the total sum.
+
+.Program.cs
+[source, cpp]
+----
+include::{src}/IntegrateCSharp/Program.cs[lines=28..55]
+----
+
+Both sequential and parallel versions of the C# implementation are slower than the C++ version.
+With low step size the sequential version are much faster.
+There is obviously more overhead with the .NET Parallel task library and the C# version.
+Although with higher results the time for the parallel execution is nearly the same.
+
+.Statistics
+image::{img}/Statistics.png[]
