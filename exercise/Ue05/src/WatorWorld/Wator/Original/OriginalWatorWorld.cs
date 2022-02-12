@@ -1,9 +1,10 @@
 using System;
 using System.Drawing;
 
-namespace VPS.Wator.Original {
-  // initial object-oriented implementation of the Wator world simulation
-  public class OriginalWatorWorld : IWatorWorld {
+namespace VPS.Wator.Original
+{
+    // initial object-oriented implementation of the Wator world simulation
+    public class OriginalWatorWorld : IWatorWorld {
     private Random random;
 
     // A matrix of ints that determines the order of execution for each cell of the world.

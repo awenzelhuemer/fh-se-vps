@@ -1,8 +1,9 @@
 using System;
 using System.Drawing;
 
-namespace VPS.Wator.Original {
-  public class Fish : Animal {
+namespace VPS.Wator.Original
+{
+    public class Fish : Animal {
     public override Color Color {
       get { return Color.White; }
     }

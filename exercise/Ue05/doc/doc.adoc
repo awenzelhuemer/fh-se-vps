@@ -1,0 +1,138 @@
+= Übung 5
+:author: Andreas Wenzelhuemer
+:email: <S1910307106@fhooe.at>
+:reproducible:
+:experimental:
+:listing-caption: Listing
+:source-highlighter: rouge
+:src: ../src
+:img: ./img
+:toc:
+:numbered:
+:toclevels: 5
+:rouge-style: github
+
+== Setup
+
+[cols="1,1"]
+|===
+|Memory size
+|16,0 GB
+|CPU type
+|Intel Core i7-8565U 1.80GHz
+|Number of cores
+|4
+|System
+|Windows 11 Education N
+|IDE
+|Visual Studio 2022
+|===
+
+<<<
+== Stock Data Visualization
+
+Async implementation of the stock visualization.
+The version with the async and await keywords is much shorter than the other one.
+
+.Wrapped methods
+[source,csharp]
+----
+include::{src}/Quandl/Quandl.UI/QuandlViewer.cs[lines=86..99]
+----
+
+=== Version with .NET Task Parallel Library
+
+.Version 1
+[source,csharp]
+----
+include::{src}/Quandl/Quandl.UI/QuandlViewer.cs[lines=101..122]
+----
+
+=== Version with async and await
+
+.Version 2
+[source,csharp]
+----
+include::{src}/Quandl/Quandl.UI/QuandlViewer.cs[lines=124..138]
+----
+
+<<<
+== Parallel Wator
+
+=== Idea and implementation
+
+The simulation can be parallelized by creating parts which get calculated simultaneously.
+The height of the section has to be at least 4 otherwise there would be race conditions.
+
+.Splitting into Partitions
+image::{img}/Distance.png[pdfwidth=50%]
+
+The separation is done with the help of a partitioner.
+It is important that the count of the partitions is even because otherwise there would be race conditions with the first and the last rows.
+
+
+.Partitions
+[source,csharp]
+----
+include::{src}/WatorWorld/Wator/Async/AsyncWatorWorld.cs[lines=53..64]
+----
+
+<<<
+The random matrix gets not randomized in the constructor anymore because only parts get randomized not everything.
+
+.Matrix initialization
+[source,csharp]
+----
+include::{src}/WatorWorld/Wator/Async/AsyncWatorWorld.cs[lines=66..67]
+----
+
+First, all even partitions get executed.
+After the execution the uneven partitions get executed and the commit gets called.
+The method itself gets called in `ExecuteStep()` with `Task.Run(ExecuteStepAsync).Wait()`.
+
+.Step execution
+[source,csharp]
+----
+include::{src}/WatorWorld/Wator/Async/AsyncWatorWorld.cs[lines=128..161]
+----
+
+The execution of the partition is similar to the previous algorithm.
+The difference is that randomize matrix gets called for each partition and a lower and upper height limit is needed.
+
+.Partition execution
+[source,csharp]
+----
+include::{src}/WatorWorld/Wator/Async/AsyncWatorWorld.cs[lines=102..126]
+----
+
+The matrix randomization method got two parameters for the lower and upper height limit because only the part should gets shuffled.
+
+.Randomize matrix
+[source,csharp]
+----
+include::{src}/WatorWorld/Wator/Async/AsyncWatorWorld.cs[lines=314..326]
+----
+
+<<<
+Advantages:
+
+- Nearly twice as fast than the previous version
+- Easy implementation and not much to change
+
+Disadvantages:
+
+- No complete randomness because only parts get randomized
+
+<<<
+=== Performance
+
+.Performance (Original Version)
+image::{img}/Analysis_Original.png[pdfwidth=50%]
+
+.Performance (Async Version)
+image::{img}/Analysis.png[pdfwidth=50%]
+
+.Speedup
+image::{img}/Speedup.png[]
+
+This version is nearly twice as fast than the last optimized.

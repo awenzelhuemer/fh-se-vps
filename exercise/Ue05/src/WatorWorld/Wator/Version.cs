@@ -4,6 +4,10 @@ namespace VPS.Wator {
     // (required for selection in the settings dialog).
     // Add names of additional implementations here.
     DummyWatorWorld,
-    OriginalWatorWorld
+    OriginalWatorWorld,
+    Improved1WatorWorld,
+    Improved2WatorWorld,
+    Improved3WatorWorld,
+    AsyncWatorWorld
   }
 }

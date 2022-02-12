@@ -25,6 +25,35 @@ namespace IntegrateCSharp
         }
 
 
+        private static double IntegrateTpl3(int n, double a, double b)
+        {
+            var sum = 0.0;
+            var w = (b - a) / n;
+            object locker = new();
+
+            var rangePartitioner = Partitioner.Create(0, n);
+            Parallel.ForEach(rangePartitioner,
+                () => 0.0,
+                (range, state, partialSum) =>
+                {
+                    for (var i = range.Item1; i < range.Item2; i++)
+                    {
+                        partialSum += w * F(a + w * (i + 0.5));
+                    }
+
+                    return partialSum;
+                },
+                partialSum =>
+                {
+                    lock (locker)
+                    {
+                        sum += partialSum;
+                    }
+                }
+            );
+            return sum;
+        }
+
         private static double IntegrateParallel(double min, double max, int steps)
         {
             double stepSize = (max - min) / steps;
@@ -73,7 +102,7 @@ namespace IntegrateCSharp
                     double timeSeq = stopWatch.ElapsedTicks / (TimeSpan.TicksPerMillisecond / 1000);
 
                     stopWatch.Restart();
-                    resParallel = IntegrateParallel(0.0, 1.0, n);
+                    resParallel = IntegrateTpl3(n, 0.0, 1.0);
                     stopWatch.Stop();
                     double timeParallel = stopWatch.ElapsedTicks / (TimeSpan.TicksPerMillisecond / 1000);
 

@@ -1,8 +1,9 @@
 using System.Drawing;
 
-namespace VPS.Wator.Original {
-  // base class for animals (fish & sharks)
-  public abstract class Animal {
+namespace VPS.Wator.Original
+{
+    // base class for animals (fish & sharks)
+    public abstract class Animal {
 
     // world that this animal lives in
     // an animal can check neighboring cells

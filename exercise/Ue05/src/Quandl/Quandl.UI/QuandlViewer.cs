@@ -24,8 +24,8 @@ namespace Quandl.UI
         private async void displayButton_Click(object sender, EventArgs e)
         {
             //SequentialImplementation();
-            TaskImplementation();
-            //await AsyncImplementation();
+            //TaskImplementation();
+            await AsyncImplementation();
         }
 
         #region Sequential Implementation
@@ -118,8 +118,7 @@ namespace Quandl.UI
                     DisplayData(result);
                     SaveImage("chart");
                 });
-            })/*.SelectMany(s => s.Result).ToList()*/;
-
+            });
         }
 
         private async Task AsyncImplementation()
